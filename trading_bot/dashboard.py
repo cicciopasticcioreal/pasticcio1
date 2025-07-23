@@ -11,7 +11,7 @@ HTML = """
 <title>Trading Bot Dashboard</title>
 <h1>Trading Bot Dashboard</h1>
 <p>Pair: {{ pair }} | Timeframe: {{ timeframe }} | Exchange: {{ exchange }} | Simulate: {{ simulate }}</p>
-<p>Total Closed P/L: {{ total_pnl }}</p>
+<p>Refresh: {{ refresh }}s | Total Closed P/L: {{ total_pnl }}</p>
 <h2>Open Positions</h2>
 <table border="1">
     <tr><th>Strategy</th><th>Entry Price</th><th>Amount</th><th>P/L</th></tr>
@@ -37,6 +37,7 @@ def create_app(bot):
             timeframe=config.TIMEFRAME,
             exchange=config.EXCHANGE_ID,
             simulate=config.SIMULATE,
+            refresh=config.REFRESH_INTERVAL,
             total_pnl=round(bot.closed_profit, 2),
         )
 

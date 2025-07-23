@@ -23,6 +23,8 @@ def main(argv=None):
     parser.add_argument("--port", type=int, default=config.DASHBOARD_PORT, help="Dashboard port")
     parser.add_argument("--order-size", type=float, default=config.ORDER_SIZE, help="Amount to trade")
     parser.add_argument("--simulate", action="store_true", default=config.SIMULATE, help="Run without placing real orders")
+    parser.add_argument("--refresh-interval", type=int, default=config.REFRESH_INTERVAL, help="Seconds between evaluations")
+    parser.add_argument("--data-path", default=config.DATA_PATH, help="CSV file to persist trades")
     parser.add_argument("--entry-threshold", type=int, default=config.ENTRY_THRESHOLD, help="Number of strategies required to enter")
     parser.add_argument("--exit-threshold", type=int, default=config.EXIT_THRESHOLD, help="Number of strategies required to exit")
     parser.add_argument(
@@ -51,6 +53,8 @@ def main(argv=None):
     config.DASHBOARD_PORT = args.port
     config.ORDER_SIZE = args.order_size
     config.SIMULATE = args.simulate
+    config.REFRESH_INTERVAL = args.refresh_interval
+    config.DATA_PATH = args.data_path
     config.ENTRY_THRESHOLD = args.entry_threshold
     config.EXIT_THRESHOLD = args.exit_threshold
     config.STRATEGIES = [s.strip() for s in args.strategies.split(',') if s.strip()]
