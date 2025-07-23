@@ -1,6 +1,10 @@
 import abc
-import pandas as pd
+import logging
 from typing import Any
+
+import pandas as pd
+
+logger = logging.getLogger(__name__)
 
 class Strategy(abc.ABC):
     """Abstract base class for trading strategies."""
@@ -13,10 +17,15 @@ class Strategy(abc.ABC):
 
     def update_data(self):
         """Fetch recent OHLCV data from the exchange."""
-        ohlcv = self.exchange.fetch_ohlcv(self.pair, timeframe=self.timeframe)
-        self.data = pd.DataFrame(ohlcv, columns=[
-            "timestamp", "open", "high", "low", "close", "volume"
-        ])
+        try:
+            ohlcv = self.exchange.fetch_ohlcv(self.pair, timeframe=self.timeframe)
+        except Exception as exc:
+            logger.warning("Failed to fetch OHLCV data: %s", exc)
+            return
+        self.data = pd.DataFrame(
+            ohlcv,
+            columns=["timestamp", "open", "high", "low", "close", "volume"],
+        )
 
     @abc.abstractmethod
     def should_enter(self) -> bool:

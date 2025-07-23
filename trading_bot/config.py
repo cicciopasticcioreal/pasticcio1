@@ -4,11 +4,13 @@ import os
 # In a real setup, you would load these from environment variables
 # or a configuration file.
 
-# API credentials for exchanges can be set via env variables.
+# Exchange identifier and credentials.  These can be overridden
+# via environment variables or command-line arguments.
+EXCHANGE_ID = os.getenv("EXCHANGE_ID", "binance")
 EXCHANGE_API_KEY = os.getenv("EXCHANGE_API_KEY", "your-key")
 EXCHANGE_SECRET = os.getenv("EXCHANGE_SECRET", "your-secret")
 
-# Default trading pair and timeframe
+# Default trading pair and timeframe used when none are supplied by the user.
 TRADING_PAIR = os.getenv("TRADING_PAIR", "BTC/USDT")
 TIMEFRAME = os.getenv("TIMEFRAME", "1h")
 
@@ -18,6 +20,14 @@ STRATEGIES = [
     "RSIStrategy",
 ]
 
-# Database or file path for persisting trades
+# Path used to persist executed trades.  The bot will append to this
+# CSV file whenever a new position is opened or closed.
 DATA_PATH = os.getenv("DATA_PATH", "trades.csv")
+
+# Log verbosity and dashboard port.
+LOG_LEVEL = os.getenv("LOG_LEVEL", "INFO")
+DASHBOARD_PORT = int(os.getenv("DASHBOARD_PORT", "5000"))
+
+# Evaluation interval in seconds for running the strategies.
+REFRESH_INTERVAL = int(os.getenv("REFRESH_INTERVAL", "60"))
 
