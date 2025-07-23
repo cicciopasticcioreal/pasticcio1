@@ -31,3 +31,13 @@ DASHBOARD_PORT = int(os.getenv("DASHBOARD_PORT", "5000"))
 # Evaluation interval in seconds for running the strategies.
 REFRESH_INTERVAL = int(os.getenv("REFRESH_INTERVAL", "60"))
 
+# Trade amount per order when entering or exiting positions.
+ORDER_SIZE = float(os.getenv("ORDER_SIZE", "1"))
+
+# Simulation mode skips actual order placement.
+SIMULATE = os.getenv("SIMULATE", "true").lower() in ("1", "true", "yes")
+
+# Threshold for how many strategies must agree before entering or exiting.
+ENTRY_THRESHOLD = int(os.getenv("ENTRY_THRESHOLD", "1"))
+EXIT_THRESHOLD = int(os.getenv("EXIT_THRESHOLD", "1"))
+

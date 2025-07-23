@@ -16,10 +16,11 @@ logger = logging.getLogger(__name__)
 
 @dataclass
 class Position:
-    """Simple representation of an open position."""
+    """Representation of an open position."""
     entry_price: float
     amount: float
     strategy: str
+    timestamp: float = field(default_factory=time.time)
 
 @dataclass
 class TradingBot:
@@ -60,23 +61,43 @@ class TradingBot:
             self.strategies.append(strategy)
         logger.info("Loaded strategies: %s", [s.__class__.__name__ for s in self.strategies])
 
+    def place_order(self, side: str, amount: float) -> Any:
+        """Execute an order on the exchange or simulate it."""
+        if config.SIMULATE:
+            logger.info("Simulated %s order for %s %s", side, amount, config.TRADING_PAIR)
+            return {"simulated": True}
+        try:
+            if side == "buy":
+                return self.exchange.create_market_buy_order(config.TRADING_PAIR, amount)
+            return self.exchange.create_market_sell_order(config.TRADING_PAIR, amount)
+        except Exception as exc:
+            logger.warning("Failed to place %s order: %s", side, exc)
+            return None
+
     def evaluate(self):
         """Evaluate strategies and manage positions."""
+        entry_votes = []
+        exit_votes = []
         for strat in self.strategies:
             try:
                 if strat.should_enter():
-                    price = strat.data["close"].iloc[-1]
-                    amount = 1  # fixed size for example
-                    self.positions.append(Position(price, amount, strat.__class__.__name__))
-                    self.record_trade("enter", price, amount, strat.__class__.__name__)
-                    logger.info("Entered position at %s by %s", price, strat.__class__.__name__)
-            except Exception as exc:
+                    entry_votes.append(strat)
+                if self.positions and strat.should_exit(self.positions[0]):
+                    exit_votes.append(strat)
+            except Exception:
                 logger.exception("Error in strategy %s", strat.__class__.__name__)
 
-        for pos in list(self.positions):
-            strat = next((s for s in self.strategies if s.__class__.__name__ == pos.strategy), None)
-            if strat and strat.should_exit(pos):
-                logger.info("Exiting position from %s at %s", pos.strategy, pos.entry_price)
-                self.record_trade("exit", pos.entry_price, pos.amount, pos.strategy)
-                self.positions.remove(pos)
+        if not self.positions and len(entry_votes) >= config.ENTRY_THRESHOLD:
+            price = entry_votes[0].data["close"].iloc[-1]
+            if self.place_order("buy", config.ORDER_SIZE):
+                self.positions.append(Position(price, config.ORDER_SIZE, "combined"))
+                self.record_trade("enter", price, config.ORDER_SIZE, "combined")
+                logger.info("Entered position at %s based on %d strategies", price, len(entry_votes))
+
+        elif self.positions and len(exit_votes) >= config.EXIT_THRESHOLD:
+            pos = self.positions[0]
+            if self.place_order("sell", pos.amount):
+                logger.info("Exiting position opened at %s", pos.entry_price)
+                self.record_trade("exit", pos.entry_price, pos.amount, "combined")
+                self.positions.clear()
 
