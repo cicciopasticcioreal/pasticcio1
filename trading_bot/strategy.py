@@ -81,3 +81,52 @@ class RSIStrategy(Strategy):
             return False
         return self._rsi() > self.overbought
 
+
+class BollingerBandStrategy(Strategy):
+    """Bollinger Bands mean reversion strategy."""
+
+    window = 20
+    num_std = 2
+
+    def should_enter(self) -> bool:
+        self.update_data()
+        if len(self.data) < self.window:
+            return False
+        ma = self.data["close"].rolling(self.window).mean().iloc[-1]
+        std = self.data["close"].rolling(self.window).std().iloc[-1]
+        lower = ma - self.num_std * std
+        price = self.data["close"].iloc[-1]
+        return price < lower
+
+    def should_exit(self, position: Any) -> bool:
+        self.update_data()
+        if len(self.data) < self.window:
+            return False
+        ma = self.data["close"].rolling(self.window).mean().iloc[-1]
+        price = self.data["close"].iloc[-1]
+        return price > ma
+
+
+class AdaptiveMovingAverageStrategy(MovingAverageStrategy):
+    """Moving average crossover with auto-adjusted windows."""
+
+    def update_windows(self):
+        """Adjust windows based on historical volatility."""
+        closes = self.data["close"]
+        if len(closes) < 50:
+            return
+        vol = closes.pct_change().rolling(50).std().iloc[-1]
+        factor = max(1, min(5, round(vol * 100)))
+        self.short_window = 5 * factor
+        self.long_window = 20 * factor
+
+    def should_enter(self) -> bool:
+        self.update_data()
+        self.update_windows()
+        return super().should_enter()
+
+    def should_exit(self, position: Any) -> bool:
+        self.update_data()
+        self.update_windows()
+        return super().should_exit(position)
+

@@ -14,6 +14,14 @@ EXCHANGE_SECRET = os.getenv("EXCHANGE_SECRET", "your-secret")
 TRADING_PAIR = os.getenv("TRADING_PAIR", "BTC/USDT")
 TIMEFRAME = os.getenv("TIMEFRAME", "1h")
 
+# Comma separated list of trading pairs.  When multiple pairs are provided
+# the bot will manage independent positions for each of them.
+_pairs_env = os.getenv("TRADING_PAIRS")
+if _pairs_env:
+    TRADING_PAIRS = [p.strip() for p in _pairs_env.split(",") if p.strip()]
+else:
+    TRADING_PAIRS = [TRADING_PAIR]
+
 # List of strategy class names to load dynamically. The environment
 # variable STRATEGIES can override this with a comma separated list.
 _strategies_env = os.getenv("STRATEGIES")
@@ -23,6 +31,8 @@ else:
     STRATEGIES = [
         "MovingAverageStrategy",
         "RSIStrategy",
+        "BollingerBandStrategy",
+        "AdaptiveMovingAverageStrategy",
     ]
 
 # Path used to persist executed trades.  The bot will append to this

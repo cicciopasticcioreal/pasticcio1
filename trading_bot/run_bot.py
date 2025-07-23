@@ -17,7 +17,8 @@ def run_bot(bot: TradingBot):
 
 def main(argv=None):
     parser = argparse.ArgumentParser(description="Run the trading bot")
-    parser.add_argument("--pair", default=config.TRADING_PAIR, help="Trading pair, e.g. BTC/USDT")
+    parser.add_argument("--pair", default=config.TRADING_PAIR, help="Primary trading pair, e.g. BTC/USDT")
+    parser.add_argument("--pairs", default=','.join(config.TRADING_PAIRS), help="Comma-separated list of trading pairs")
     parser.add_argument("--timeframe", default=config.TIMEFRAME, help="OHLCV timeframe")
     parser.add_argument("--exchange", default=config.EXCHANGE_ID, help="Exchange id from ccxt")
     parser.add_argument("--port", type=int, default=config.DASHBOARD_PORT, help="Dashboard port")
@@ -48,6 +49,7 @@ def main(argv=None):
 
     # Update configuration based on CLI args
     config.TRADING_PAIR = args.pair
+    config.TRADING_PAIRS = [p.strip() for p in args.pairs.split(',') if p.strip()]
     config.TIMEFRAME = args.timeframe
     config.EXCHANGE_ID = args.exchange
     config.DASHBOARD_PORT = args.port
