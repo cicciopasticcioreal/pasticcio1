@@ -14,11 +14,16 @@ EXCHANGE_SECRET = os.getenv("EXCHANGE_SECRET", "your-secret")
 TRADING_PAIR = os.getenv("TRADING_PAIR", "BTC/USDT")
 TIMEFRAME = os.getenv("TIMEFRAME", "1h")
 
-# List of strategy class names to load dynamically
-STRATEGIES = [
-    "MovingAverageStrategy",
-    "RSIStrategy",
-]
+# List of strategy class names to load dynamically. The environment
+# variable STRATEGIES can override this with a comma separated list.
+_strategies_env = os.getenv("STRATEGIES")
+if _strategies_env:
+    STRATEGIES = [s.strip() for s in _strategies_env.split(",") if s.strip()]
+else:
+    STRATEGIES = [
+        "MovingAverageStrategy",
+        "RSIStrategy",
+    ]
 
 # Path used to persist executed trades.  The bot will append to this
 # CSV file whenever a new position is opened or closed.
@@ -40,4 +45,9 @@ SIMULATE = os.getenv("SIMULATE", "true").lower() in ("1", "true", "yes")
 # Threshold for how many strategies must agree before entering or exiting.
 ENTRY_THRESHOLD = int(os.getenv("ENTRY_THRESHOLD", "1"))
 EXIT_THRESHOLD = int(os.getenv("EXIT_THRESHOLD", "1"))
+
+# Risk management settings. Percentages are expressed as positive numbers.
+# Set to 0 to disable.
+STOP_LOSS_PCT = float(os.getenv("STOP_LOSS_PCT", "0"))
+TAKE_PROFIT_PCT = float(os.getenv("TAKE_PROFIT_PCT", "0"))
 

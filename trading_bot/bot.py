@@ -29,6 +29,7 @@ class TradingBot:
     exchange_id: str = config.EXCHANGE_ID
     strategies: List[Strategy] = field(default_factory=list)
     positions: List[Position] = field(default_factory=list)
+    closed_profit: float = 0.0
     data_path: str = config.DATA_PATH
 
     def __post_init__(self):
@@ -76,6 +77,12 @@ class TradingBot:
 
     def evaluate(self):
         """Evaluate strategies and manage positions."""
+        current_price = None
+        try:
+            current_price = self.exchange.fetch_ticker(config.TRADING_PAIR)["last"]
+        except Exception as exc:
+            logger.warning("Failed to fetch ticker: %s", exc)
+
         entry_votes = []
         exit_votes = []
         for strat in self.strategies:
@@ -87,17 +94,32 @@ class TradingBot:
             except Exception:
                 logger.exception("Error in strategy %s", strat.__class__.__name__)
 
-        if not self.positions and len(entry_votes) >= config.ENTRY_THRESHOLD:
-            price = entry_votes[0].data["close"].iloc[-1]
+        if not self.positions and len(entry_votes) >= config.ENTRY_THRESHOLD and current_price is not None:
+            price = current_price
             if self.place_order("buy", config.ORDER_SIZE):
                 self.positions.append(Position(price, config.ORDER_SIZE, "combined"))
                 self.record_trade("enter", price, config.ORDER_SIZE, "combined")
                 logger.info("Entered position at %s based on %d strategies", price, len(entry_votes))
 
-        elif self.positions and len(exit_votes) >= config.EXIT_THRESHOLD:
+        elif self.positions:
             pos = self.positions[0]
-            if self.place_order("sell", pos.amount):
-                logger.info("Exiting position opened at %s", pos.entry_price)
-                self.record_trade("exit", pos.entry_price, pos.amount, "combined")
-                self.positions.clear()
+            risk_exit = False
+            if current_price is not None:
+                change_pct = (current_price - pos.entry_price) / pos.entry_price * 100
+                if config.TAKE_PROFIT_PCT and change_pct >= config.TAKE_PROFIT_PCT:
+                    logger.info("Take profit reached: %.2f%%", change_pct)
+                    risk_exit = True
+                elif config.STOP_LOSS_PCT and change_pct <= -config.STOP_LOSS_PCT:
+                    logger.info("Stop loss reached: %.2f%%", change_pct)
+                    risk_exit = True
+
+            if len(exit_votes) >= config.EXIT_THRESHOLD or risk_exit:
+                if current_price is None:
+                    current_price = pos.entry_price
+                if self.place_order("sell", pos.amount):
+                    pnl = (current_price - pos.entry_price) * pos.amount
+                    self.closed_profit += pnl
+                    logger.info("Exiting position opened at %s with P/L %.2f", pos.entry_price, pnl)
+                    self.record_trade("exit", current_price, pos.amount, "combined")
+                    self.positions.clear()
 

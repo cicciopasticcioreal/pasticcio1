@@ -9,7 +9,10 @@ app = Flask(__name__)
 HTML = """
 <!doctype html>
 <title>Trading Bot Dashboard</title>
-<h1>Open Positions</h1>
+<h1>Trading Bot Dashboard</h1>
+<p>Pair: {{ pair }} | Timeframe: {{ timeframe }} | Exchange: {{ exchange }} | Simulate: {{ simulate }}</p>
+<p>Total Closed P/L: {{ total_pnl }}</p>
+<h2>Open Positions</h2>
 <table border="1">
     <tr><th>Strategy</th><th>Entry Price</th><th>Amount</th><th>P/L</th></tr>
     {% for p in positions %}
@@ -27,7 +30,15 @@ def create_app(bot):
             current = bot.exchange.fetch_ticker(config.TRADING_PAIR)["last"]
             pnl = (current - p.entry_price) * p.amount
             positions.append({"strategy": p.strategy, "entry_price": p.entry_price, "amount": p.amount, "pnl": round(pnl, 2)})
-        return render_template_string(HTML, positions=positions)
+        return render_template_string(
+            HTML,
+            positions=positions,
+            pair=config.TRADING_PAIR,
+            timeframe=config.TIMEFRAME,
+            exchange=config.EXCHANGE_ID,
+            simulate=config.SIMULATE,
+            total_pnl=round(bot.closed_profit, 2),
+        )
 
     @app.route("/trades")
     def trades():

@@ -25,6 +25,23 @@ def main(argv=None):
     parser.add_argument("--simulate", action="store_true", default=config.SIMULATE, help="Run without placing real orders")
     parser.add_argument("--entry-threshold", type=int, default=config.ENTRY_THRESHOLD, help="Number of strategies required to enter")
     parser.add_argument("--exit-threshold", type=int, default=config.EXIT_THRESHOLD, help="Number of strategies required to exit")
+    parser.add_argument(
+        "--strategies",
+        default=','.join(config.STRATEGIES),
+        help="Comma-separated list of strategy class names",
+    )
+    parser.add_argument(
+        "--stop-loss",
+        type=float,
+        default=config.STOP_LOSS_PCT,
+        help="Stop loss percentage",
+    )
+    parser.add_argument(
+        "--take-profit",
+        type=float,
+        default=config.TAKE_PROFIT_PCT,
+        help="Take profit percentage",
+    )
     args = parser.parse_args(argv)
 
     # Update configuration based on CLI args
@@ -36,6 +53,9 @@ def main(argv=None):
     config.SIMULATE = args.simulate
     config.ENTRY_THRESHOLD = args.entry_threshold
     config.EXIT_THRESHOLD = args.exit_threshold
+    config.STRATEGIES = [s.strip() for s in args.strategies.split(',') if s.strip()]
+    config.STOP_LOSS_PCT = args.stop_loss
+    config.TAKE_PROFIT_PCT = args.take_profit
 
     bot = TradingBot(exchange_id=args.exchange)
     app = create_app(bot)
